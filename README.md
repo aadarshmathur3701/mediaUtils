@@ -1,3 +1,5 @@
+[![](https://jitpack.io/v/aadarshmathur3701/mediaUtils.svg)](https://jitpack.io/#aadarshmathur3701/mediaUtils)
+
 This library use to for multiple media utilities:-
 
 how to import
