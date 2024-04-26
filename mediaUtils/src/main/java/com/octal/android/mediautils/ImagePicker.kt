@@ -160,23 +160,6 @@ class ImagePicker {
 
     }
 
-//    fun getImage(context: Context) {
-//        this.context = context
-//        val imagePickerDialog = Dialog(context)
-//        val binding = ImagePickerDialogBinding.inflate(LayoutInflater.from(context))
-//        imagePickerDialog.setContentView(binding.root)
-//        imagePickerDialog.show()
-//        binding.selectFromPicker.setOnClickListener {
-//            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-//            imagePickerDialog.dismiss()
-//        }
-//
-//        binding.selectFromCamera.setOnClickListener {
-//            takeImageFormCamera(context)
-//            imagePickerDialog.dismiss()
-//        }
-//    }
-
     fun getImageFromStorage(context: Context){
         this.context = context
         photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -185,6 +168,17 @@ class ImagePicker {
     fun getImageFromCamera(context: Context){
         this.context = context
         takeImageFormCamera(context)
+    }
+
+    fun isFixedRatioCrop(ratioX: Int, ratioY: Int){
+        cropOptions = CropImageOptions(
+            guidelines = CropImageView.Guidelines.ON,
+            allowRotation = true,
+            activityTitle = "Crop",
+            fixAspectRatio = true,
+            aspectRatioX = ratioX,
+            aspectRatioY = ratioY
+        )
     }
 
     private fun takeImageFormCamera(context: Context) {

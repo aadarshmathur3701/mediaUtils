@@ -10,6 +10,31 @@ import java.io.InputStream
 import java.io.OutputStream
 
 object FileUtils {
+
+    fun fileFromContentUri(context: Context, contentUri: Uri, name: String = "media_utils"): File {
+        // Preparing Temp file name
+        val fileExtension = getFileExtension(context, contentUri)
+        val fileName = name + if (fileExtension != null) ".$fileExtension" else ".mp4"
+        // /data/user/0/com.app.gonetwork/cache/temp_file
+        // Creating Temp file
+        val tempFile = File(context.cacheDir, fileName)
+        tempFile.createNewFile()
+
+        try {
+            val oStream = FileOutputStream(tempFile)
+            val inputStream = context.contentResolver.openInputStream(contentUri)
+
+            inputStream?.let {
+                copy(inputStream, oStream)
+            }
+
+            oStream.flush()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        return tempFile
+    }
     fun fileFromContentUri(context: Context, contentUri: Uri): File {
         // Preparing Temp file name
         val fileExtension = getFileExtension(context, contentUri)
