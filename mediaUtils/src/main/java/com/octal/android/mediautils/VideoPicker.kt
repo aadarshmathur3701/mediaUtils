@@ -27,7 +27,7 @@ class VideoPicker {
 
     private lateinit var photoPickerLauncher: ActivityResultLauncher<PickVisualMediaRequest>
     private lateinit var cameraPickerLauncher: ActivityResultLauncher<Intent>
-    private lateinit var storagePermissionLauncher: ActivityResultLauncher<String>
+    private lateinit var permissionLauncher: ActivityResultLauncher<String>
     private var videoUri: Uri? = null
     private var context: Context? = null
     private var duration = 30
@@ -62,11 +62,11 @@ class VideoPicker {
                             }
                         }
                     }
-                storagePermissionLauncher =
+                permissionLauncher =
                     activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                         if (isGranted) {
                             context?.let {
-                                takeImageFormCamera(it)
+                                takeVideoFromCamera(it)
                             }
                         } else {
                             Toast.makeText(
@@ -109,11 +109,11 @@ class VideoPicker {
                         }
                     }
                 }
-            storagePermissionLauncher =
+            permissionLauncher =
                 fragment.registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                     if (isGranted) {
                         context?.let {
-                            takeImageFormCamera(it)
+                            takeVideoFromCamera(it)
                         }
                     } else {
                         Toast.makeText(
@@ -135,34 +135,42 @@ class VideoPicker {
 
     fun getVideoFromCamera(context: Context){
         this.context = context
-        takeImageFormCamera(context)
+        takeVideoFromCamera(context)
     }
 
-    private fun takeImageFormCamera(context: Context) {
-        runCatching {
-            val timeStamp = System.currentTimeMillis()
-            val values = ContentValues()
-            values.put(
-                MediaStore.Images.Media.TITLE,
-                "com.octal.mediaUtils_$timeStamp"
-            )
-            values.put(MediaStore.Images.Media.DESCRIPTION, "From your Camera")
-            videoUri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            cameraPickerLauncher.launch(Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply {
-                putExtra(MediaStore.EXTRA_OUTPUT, videoUri)
-                putExtra(MediaStore.EXTRA_DURATION_LIMIT, duration)
-            })
-        }.onFailure {
-            if(it is SecurityException){
-                checkPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            } else{
-                Toast.makeText(
-                    context,
-                    "Something went wrong.",
-                    Toast.LENGTH_SHORT
-                ).show()
+
+    private fun takeVideoFromCamera(context: Context) {
+        if(checkPermission(context,Manifest.permission.CAMERA)){
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || checkPermission(context, Manifest.permission.POST_NOTIFICATIONS)) {
+                captureImage(context)
             }
         }
+    }
+
+    private fun captureImage(context: Context) {
+        startCameraForeground()
+        val timeStamp = System.currentTimeMillis()
+        val values = ContentValues()
+        values.put(
+            MediaStore.Images.Media.TITLE,
+            "com.octal.mediaUtils_$timeStamp"
+        )
+        values.put(MediaStore.Images.Media.DESCRIPTION, "From your Camera")
+        videoUri = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        cameraPickerLauncher.launch(Intent(MediaStore.ACTION_VIDEO_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, videoUri)
+            putExtra(MediaStore.EXTRA_DURATION_LIMIT, duration)
+        })
+    }
+
+    private fun startCameraForeground() {
+        val serviceIntent = Intent(context, CameraForegroundService::class.java)
+        context?.let { ContextCompat.startForegroundService(it, serviceIntent) }
+    }
+
+    private fun stopCameraService(){
+        val stopServiceIntent = Intent(context, CameraForegroundService::class.java)
+        context?.stopService(stopServiceIntent)
     }
 
     private fun checkPermission(
@@ -176,7 +184,7 @@ class VideoPicker {
                     permission
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                storagePermissionLauncher.launch(permission)
+                permissionLauncher.launch(permission)
                 false
             } else {
                 true
@@ -198,7 +206,7 @@ class VideoPicker {
         alertBuilder.setPositiveButton(
             "Yes"
         ) { _, _ ->
-            storagePermissionLauncher.launch(permission)
+            permissionLauncher.launch(permission)
         }
         val alert: AlertDialog = alertBuilder.create()
         alert.show()

@@ -8,8 +8,8 @@ dependencies {
 	        implementation 'com.github.aadarshmathur3701:mediaUtils:1.4.3'
 	}
 
- 1. File Utiles
-Use for conevert content URI to file
+ 1. File Utils
+Use for convert content URI to file
 How to Use
 
  val file = FileUtils.fileFromContentUri(requireContext(), uri, "filePrefix)
